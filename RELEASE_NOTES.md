@@ -1,3 +1,7 @@
+#### 3.9.2-Pre (2017-11-01)
+* Track the position of the last new line.
+* Keep trying when we get an exception in SkipToNextRecord => ReadField
+
 #### 3.9.1 (2016-04-09)
 * Added max field length for quoted fields (@criteo)
 * Strengthen Debug.Assert condition in GetSchemaWithoutHeaders (@joshgo)
