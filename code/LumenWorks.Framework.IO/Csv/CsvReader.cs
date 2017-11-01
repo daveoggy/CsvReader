@@ -368,6 +368,7 @@ namespace LumenWorks.Framework.IO.Csv
                 }
             }
 
+            _blocksRead = -1;
             _reader = reader;
             _delimiter = delimiter;
             _quote = quote;
@@ -685,6 +686,19 @@ namespace LumenWorks.Framework.IO.Csv
         public bool ParseErrorFlag
         {
             get { return _parseErrorFlag; }
+        }
+
+        private long _blocksRead;
+
+        public long LastNewLine
+        {
+            get
+            {
+                var offset = _blocksRead * _bufferSize;
+
+                return _lastNewLine + offset;
+            }
+            private set => _lastNewLine = value;
         }
 
         #endregion
@@ -1082,6 +1096,8 @@ namespace LumenWorks.Framework.IO.Csv
                     pos = 0;
                 }
 
+                LastNewLine = pos;
+
                 return true;
             }
             else if (c == '\n')
@@ -1093,6 +1109,8 @@ namespace LumenWorks.Framework.IO.Csv
                     ReadBuffer();
                     pos = 0;
                 }
+
+                LastNewLine = pos;
 
                 return true;
             }
@@ -1142,7 +1160,10 @@ namespace LumenWorks.Framework.IO.Csv
             _bufferLength = _reader.Read(_buffer, 0, _bufferSize);
 
             if (_bufferLength > 0)
+            {
+                _blocksRead++;
                 return true;
+            }
             else
             {
                 _eof = true;
@@ -1774,9 +1795,22 @@ namespace LumenWorks.Framework.IO.Csv
             }
             else
             {
-                while (ReadField(_nextFieldIndex, true, true) != null)
+                while (ReadFieldWithFailover())
                 {
                 }
+            }
+        }
+
+        private bool ReadFieldWithFailover()
+        {
+            try
+            {
+                return ReadField(_nextFieldIndex, true, true) != null;
+            }
+            catch
+            {
+                // Well shit. Lets keep going...
+                return true;
             }
         }
 
@@ -2505,6 +2539,8 @@ namespace LumenWorks.Framework.IO.Csv
         /// Contains the locking object for multi-threading purpose.
         /// </summary>
         private readonly object _lock = new object();
+
+        private long _lastNewLine;
 
         /// <summary>
         /// Occurs when the instance is disposed of.
